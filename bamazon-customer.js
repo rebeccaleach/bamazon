@@ -25,6 +25,7 @@ var prompting = {
 var productChoice;
 var productQuantity;
 var quantityResult;
+var orderTotal;
 
 
 
@@ -52,50 +53,42 @@ var buyProducts = function() {
 	connection.query('SELECT * FROM product', function(err, res) {
 		prompt.start();
 		prompt.get(prompting, function(error, response) {
-			productChoice = response.productID;
-			productQuantity = response.quantity;
-			console.log('The product ID you entered is ' + productChoice);
-			console.log('The quantity you entered is ' + productQuantity);
-
+			desiredProduct = response.productID;
+			desiredQuantity = response.quantity;
 
 			for (var j = 0; j < res.length; j++) {
 				// console.log(res[j].itemID + " | " + res[j].productNAME + " | " + res[j].stockQUANTITY);
-				if (res[j].itemID == productChoice) {
-					console.log(res[j].productNAME);
-					console.log("Quantity of " + res[j].productNAME + " left in stock: " + productQuantity);
+				if (res[j].itemID == desiredProduct) {
+					console.log("You selected " + desiredQuantity + " of " + res[j].productNAME);
+					var quantityResult = res[j].stockQUANTITY - desiredQuantity;
+					// console.log(res[j].stockQUANTITY);
+					// console.log(desiredQuantity);
+					// console.log(quantityResult);
+					if (quantityResult >= 0) {
+
+						connection.query('UPDATE product SET ? WHERE ?', [{
+								stockQUANTITY: quantityResult
+							}, {
+								itemID: desiredProduct
+							}], function(reply) {
+								console.log("Inventory was updated.");
+							}
+						); // end of second connection.query
+
+						orderTotal = res[j].price * desiredQuantity;
+						console.log("Your total is: $" + orderTotal);
+						console.log("Your order has been placed!");
+					}
+					else {
+						console.log("We don't have enough of that item to fulfill your order.");
+					}
 				}
-				// else {
-				// 	console.log("You entered an invalid product ID.");
-				// 	buyProducts();
-				// 	break;
-				// }
-
-
-
-
-				// if (res[j].productID === productChoice) {
-				// 	var quantityResult = res[j].quantity - productQuantity;
-				// 	if (quantityResult >= 0) {
-				// 		console.log("Hurray! Your order has been placed!");
-				// 	}
-				// 	else {
-				// 		console.log("Your order cannot be fulfilled because we don't have enough items in stock.");
-				// 	}
-				// }
 			}
 			// console.log("-------------------");
-			// console.log(productChoice);
+			// console.log(desiredProduct);
 			// console.log(productQuantity);
-			
-
 
 		}); // end of prompt.get
-
-
-
-		
-
-
-
 	}); // end of connection.query
 }; // end of buyProducts function
+
